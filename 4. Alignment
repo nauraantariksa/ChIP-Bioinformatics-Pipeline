@@ -1,1 +1,13 @@
+#PBS -lwalltime=08:00:00
+#PBS -lselect=1:ncpus=250:mem=900gb
+
+module load anaconda3/personal
+module load bowtie2
+
+read_1="path/to/read_1/trimmed/file.fq"
+read_2="path/to/read_2/trimmed/file.fq"
+
+bowtie2 -x /rds/general/project/diantonio/live/tools/genomes/hg38 -1 $read_1 -2 $read_2 -S CS1AN_WT_BG4_Bio1.sam 2> summary_CS1AN_WT_BG4_Bio1.txt
+
+cp * $PBS_O_WORKDIR
 
