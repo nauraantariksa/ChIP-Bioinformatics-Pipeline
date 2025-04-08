@@ -53,6 +53,6 @@ cut -f 1,2,6 FILE_NAME.clean.bed | sort -k1,1 -k2,2n -k3,3n  > FILE_NAME.fragmen
 binLen=500 #Click enter directly on terminal
 awk -v w=$binLen '($2 + $3 > 0) {print $1, int(($2 + $3)/(2*w))*w + w/2}' FILE_NAME.fragments.bed | sort -k1,1V -k2,2n | uniq -c | awk -v OFS="\t" '{print $2, $3, $1}' | sort -k1,1V -k2,2n > FILE_NAME.fragmentsCount.bin$binLen.bed
 
-##Perform correlation analysis in R-studio
+##Perform correlation analysis in R-studio. The analysis code is called "CorrelationMatrix.R", obtained from https://www.protocols.io/view/cut-amp-tag-data-processing-and-analysis-tutorial-e6nvw93x7gmk/v1?step=14
 
 
