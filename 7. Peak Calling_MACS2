@@ -1,0 +1,15 @@
+#MACS2 is installed in an environment in anaconda3/personal. Enter the environment as the following
+
+module load anaconda3/personal
+source ~./bashrc
+conda activate macs2_env
+
+#terminal will show (macs_2) when the environment is properly entered
+
+#code to call peaks using macs2
+
+callpeak  -t /path/to/CUT&Tag/BAM/File -c /path/to/CUT&Tag/Input/BAM/File -n FILE_NAME
+
+# -t is sorted ChIP bam file
+# -c is sorted input bam file 
+# -n is output file prefix
