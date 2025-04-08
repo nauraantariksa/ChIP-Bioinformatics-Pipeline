@@ -19,3 +19,5 @@ rm $name.bam $name.sort.bam $name.dedup.sort.bam
 done
 
 cp * $PBS_O_WORKDIR
+
+#Often times, deduplication does not work properly, and so the sample needs to be "deduplicated" (see 6.)
