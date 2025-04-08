@@ -10,4 +10,8 @@ bedtools shuffle -excl /rds/general/user/nfa23/projects/diantonio/live/tools/bla
 # -noOverlapping prevents shuffled peaks to be overlapped
 # -i input file, e.g. shared peaks BED file
 
-#Annotating shuffled peaks
+#Annotating shuffled peaks with Homer
+module load homer 
+annotatePeaks.pl  FILE_NAME_SharedPeaks_Shuffled_1.bed hg38 > Annotated_FILE_NAME_SharedPeaks_Shuffled_1.bed 2> report_FILE_NAME_SharedPeaks_Shuffled_1.bed
+
+#Report files give the genomic distribution of shuffled peaks. Fold enrichment can be calculated against the "raw" peak distribution from 8.
