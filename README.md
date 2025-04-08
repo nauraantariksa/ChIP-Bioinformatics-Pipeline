@@ -8,3 +8,7 @@ Make sure these dependencies are installed in your system:
 - samtools
 - bedtools
 
+In anaconda3, make separate environments for the following python suites used for the data analyses:
+
+- deeptools (in a deeptools_env, perform $conda install -c conda-forge -c bioconda deeptools)
+- macs2 (in a macs2_env, perform $conda install -c bioconda macs2) 
