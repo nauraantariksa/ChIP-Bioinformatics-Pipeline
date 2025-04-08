@@ -1,0 +1,21 @@
+#PBS -lwalltime=08:00:00
+#PBS -lselect=1:ncpus=250:mem=900gb
+
+module load samtools
+module load bedtools
+module load picard
+
+sam_dir=/path/to/Alignment
+
+for file in $sam_dir/*.sam
+do
+name=`basename $file .sam` 
+samtools view -F 2308 -b -q 10 $sam_dir/$name.sam > $name.bam
+samtools sort -o $name.sort.bam -O 'bam' -T temp_$name $name.bam
+picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$name.sort.bam O=$name.dedup.sort.bam M=$name.metrics.txt
+bedtools intersect -v -abam $name.dedup.sort.bam -b '/rds/general/project/diantonio/live/tools/blacklisted_regions/hg38-blacklist.v2.bed' > $name.bl.dedup.sort.bam
+samtools index $name.bl.dedup.sort.bam
+rm $name.bam $name.sort.bam $name.dedup.sort.bam
+done
+
+cp * $PBS_O_WORKDIR
