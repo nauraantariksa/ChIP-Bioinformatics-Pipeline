@@ -1,0 +1,13 @@
+#Peak annotation gives you the number of peaks in certain genomics regions. This can be plotted to show the distribution of peaks across the genome. To understand if these peaks are of "significance" in those region, fold enrichment analysis must be performed.
+
+#Shuffling peaks against predicted OQS (from Marsico paper)
+
+bedtools shuffle -excl /rds/general/user/nfa23/projects/diantonio/live/tools/blacklisted_regions/hg38-blacklist.v2.bed -incl /rds/general/user/nfa23/projects/diantonio/live/Naura/CnT/CS1AN_WT/PeakFiles_SEACR/UCSC/g4seq_marsico_hg38.bed -maxTries 1000 -noOverlapping -i FILE_NAME_SharedPeaks.bed -g hg38.genome > FILE_NAME_SharedPeaks_Shuffled_1.bed 2> FILE_NAME_SharedPeaks_Shuffled_1_error.log
+
+# -excl prevents peaks to be shuffled into these blacklisted regions
+# -incl ensures peaks are shuffled into these regions, e.g. the G4 OQSs
+# -maxTries maximum number of attempts to find a home for a shuffled interval in the presence of -incl or -excl., default = 1000
+# -noOverlapping prevents shuffled peaks to be overlapped
+# -i input file, e.g. shared peaks BED file
+
+#Annotating shuffled peaks
