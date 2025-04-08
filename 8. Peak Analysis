@@ -10,6 +10,8 @@ bedtools intersect -u -a FILE_NAME_Bio1.narrowPeak -b FILE_NAME_Bio2.narrowPeak 
 bedtools intersect -u -a FILE_NAME_shared_peaks_12.narrowPeak -b FILE_NAME_Bio3.narrowPeak > FILE_NAME_shared_peaks123.narrowPeak
 
 #Intersecting 3x repeats; using multiinter
+module load bedtools
+bedtools multiinter -i FILE_NAME_Bio1.bed FILE_NAME_Bio2.bed FILE_NAME_Bio2.bed | awk '$4 >= 2' OFS="\t" > CS1AN_WT_BG4_Multiinter.bed
 
 
 
