@@ -7,7 +7,7 @@ module load bowtie2
 read_1="path/to/read_1/trimmed/file.fq"
 read_2="path/to/read_2/trimmed/file.fq"
 
-bowtie2 -x /rds/general/project/diantonio/live/tools/genomes/hg38 -1 $read_1 -2 $read_2 -S CS1AN_WT_BG4_Bio1.sam 2> summary_CS1AN_WT_BG4_Bio1.txt
+bowtie2 -x /rds/general/project/diantonio/live/tools/genomes/hg38_ucsc/hg38 -1 $read_1 -2 $read_2 -S FILE_NAME_Bio1.sam 2> summary_FILE_NAME_Bio1.txt
 
 cp * $PBS_O_WORKDIR
 
