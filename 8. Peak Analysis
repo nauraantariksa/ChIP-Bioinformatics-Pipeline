@@ -1,0 +1,21 @@
+#All peak intersection is done directly on Terminal. Remember to be in the directory where you want to keep the output file to ensure the file is written there. Otherwise, indicate the full file path.
+
+#Intersecting 3x repeats; peaks will be called if present in 2 or more samples
+module load bedtools
+bedtools intersect -u -a FILE_NAME_Bio1.narrowPeak -b FILE_NAME_Bio2.narrowPeak -b FILE_NAME_Bio3.narrowPeak > FILE_NAME_shared_peaks_1v23.narrowPeak
+
+#Intersecting 3x repeats; peaks called if in all 3 samples
+module load bedtools
+bedtools intersect -u -a FILE_NAME_Bio1.narrowPeak -b FILE_NAME_Bio2.narrowPeak > FILE_NAME_shared_peaks_12.narrowPeak
+bedtools intersect -u -a FILE_NAME_shared_peaks_12.narrowPeak -b FILE_NAME_Bio3.narrowPeak > FILE_NAME_shared_peaks123.narrowPeak
+
+#Intersecting 3x repeats; using multiinter
+
+
+
+# convert narrowPeak to bed file
+awk 'BEGIN {OFS="\t"} {print $1, $2, $3, $4, $5, $6}' input.narrowPeak > output.bed
+
+# peak annotation
+module load homer 
+annotatePeaks.pl  shared_peak_file.bed hg38 > annotated_shared_peak_file.bed 2> report_shared_peak_file.bed
