@@ -1,1 +1,17 @@
+#PBS -lwalltime=08:00:00
+#PBS -lselect=1:ncpus=200:mem=900gb
 
+module load samtools
+module load bedtools
+module load picard
+
+bam_dir='path/to/FilteringSorting'
+
+for file in $bam_dir/*.bl.dedup.sort.bam
+do
+name=`basename $file .bl.dedup.sort.bam`
+picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$file O=$name.dedup2.bl.dedup.sort.bam M=$name.dedup2.metrics.txt
+samtools index $name.dedup2.bl.dedup.sort.bam
+done
+
+cp * $PBS_O_WORKDIR
