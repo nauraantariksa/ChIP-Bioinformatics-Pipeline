@@ -1,1 +1,9 @@
+#SEACR is cloned from a Github repository, with the folder located in the root directory
 
+#convert file into bedgraph
+
+
+
+#SEACR is run on a bash comment
+
+bash /rds/general/user/nfa23/home/SEACR/SEACR_1.3.sh FILE_NAME.bedgraph 0.01 non stringent output
