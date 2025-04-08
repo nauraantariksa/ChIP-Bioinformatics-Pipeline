@@ -1,7 +1,7 @@
 #MACS2 is installed in an environment in anaconda3/personal. Enter the environment as the following
 
 module load anaconda3/personal
-source ~./bashrc
+source ~/.bashrc
 conda activate macs2_env
 
 #terminal will show (macs_2) when the environment is properly entered
