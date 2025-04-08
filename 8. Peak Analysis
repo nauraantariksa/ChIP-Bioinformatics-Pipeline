@@ -16,8 +16,6 @@ bedtools multiinter -i FILE_NAME_Bio1.bed FILE_NAME_Bio2.bed FILE_NAME_Bio2.bed 
 awk 'BEGIN {OFS="\t"} {print $1, $2, $3}' FILE_NAME_Multiinter.bed > FILE_NAME_Multiinter_Min.bed #the multiinter bed file includes many columns that confuses IGV. This command prints the 3 important columns of a bed file to ensure IGV can open the file
 bedtools merge -i CS1AN_WT_BG4_Multiinter_Min.bed > CS1AN_WT_BG4_Multiinter_Min_Merged.bed #multiinter causes peak "fragmentation". This command merges fragmented peaks.
 
-
-
 # convert narrowPeak to bed file
 awk 'BEGIN {OFS="\t"} {print $1, $2, $3, $4, $5, $6}' input.narrowPeak > output.bed
 
