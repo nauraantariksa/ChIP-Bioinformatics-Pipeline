@@ -1,8 +1,20 @@
 #SEACR is cloned from a Github repository, with the folder located in the root directory
 
-#convert file into bedgraph
+#SEACR works on bedgraph file. BAM files after deduplication have to be converted in BEDGRAPH files using deeptools.
 
+#PBS -lwalltime=08:00:00
+#PBS -lselect=1:ncpus=200:mem=900gb
 
+module load anaconda3/personal
+source activate deeptools_env
+
+cd $PBS_O_WORKDIR
+
+for file in $PBS_O_WORKDIR/*.bam
+do
+name="${file%.bam}"
+bamCoverage -of bedgraph -b $file -o ${name}.bedgraph
+done
 
 #SEACR is run on a bash comment
 
