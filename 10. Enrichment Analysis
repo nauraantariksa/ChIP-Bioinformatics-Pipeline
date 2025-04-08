@@ -27,14 +27,14 @@ computeMatrix reference-point --referencePoint center -b 10000 -a 10000 -R REFER
 
 ## Plot Enrichment Profile in deeptools_env
 module load anaconda3/personal
-source ~./bahsrc
+source ~/.bahsrc
 conda activate deeptools_env 
 
 plotProfile -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png --plotTitle
 
 ## Plot Enrichment Heatmap in deeptools_env
 module load anaconda3/personal
-source ~./bahsrc
+source ~/.bahsrc
 conda activate deeptools_env 
 
 plotHeatmap -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png
