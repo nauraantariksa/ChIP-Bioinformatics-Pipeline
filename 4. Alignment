@@ -12,3 +12,5 @@ read_2="path/to/read_2/trimmed/file.fq"
 bowtie2 -x /rds/general/project/diantonio/live/tools/genomes/hg38_ucsc/hg38 -1 $read_1 -2 $read_2 -S FILE_NAME_Bio1.sam 2> summary_FILE_NAME_Bio1.txt
 
 cp * $PBS_O_WORKDIR
+
+#Check the alignment rate, usually > 75% aligned is considered a good amount of alignment
