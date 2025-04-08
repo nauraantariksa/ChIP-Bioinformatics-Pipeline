@@ -6,9 +6,16 @@ vim name.pbs
 #type ':wq' to quit pbs
 
 #Submitting a job
-
 qsub name.pbs
 
 #Monitoring a job
-
 qstat
+
+#Deleting a job
+qdel followed by job id to delete job from queue
+
+# General codes
+# cd to change course directory 
+# ls to list files in folder 
+# echo to repeat back what you've written 
+# gunzip to unzip a gz file 
