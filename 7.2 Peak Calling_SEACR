@@ -1,4 +1,5 @@
 #SEACR is cloned from a Github repository, with the folder located in the root directory
+#Remember to load bedtools and R for SEACR to run on Terminal
 
 #SEACR works on bedgraph file. BAM files after deduplication have to be converted in BEDGRAPH files using deeptools.
 
