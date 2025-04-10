@@ -1,4 +1,4 @@
-#Alignment of reads are performed using bowtie2 algorithm
+#Alignment of reads are performed using bowtie2 algorithm. Remember to unzip the fq files to allow bowtie2 to work properly
 
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=250:mem=900gb
