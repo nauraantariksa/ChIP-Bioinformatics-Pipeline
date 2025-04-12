@@ -8,7 +8,7 @@ conda activate macs2_env
 
 #code to call peaks using macs2
 
-callpeak  -t /path/to/CUT&Tag/BAM/File -c /path/to/CUT&Tag/Input/BAM/File -f BAMPE -n FILE_NAME
+macs2 callpeak  -t /path/to/CUT&Tag/BAM/File -c /path/to/CUT&Tag/Input/BAM/File -f BAMPE -n FILE_NAME
 
 # -t is sorted ChIP bam file
 # -c is sorted input bam file 
