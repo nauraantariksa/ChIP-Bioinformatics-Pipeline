@@ -29,3 +29,33 @@ binLen=500 #Click enter directly on terminal
 awk -v w=$binLen '($2 + $3 > 0) {print $1, int(($2 + $3)/(2*w))*w + w/2}' FILE_NAME.fragments.bed | sort -k1,1V -k2,2n | uniq -c | awk -v OFS="\t" '{print $2, $3, $1}' | sort -k1,1V -k2,2n > FILE_NAME.fragmentsCount.bin$binLen.bed
 
 ##Perform correlation analysis in R-studio. The analysis code is called "CorrelationMatrix.R", obtained from https://www.protocols.io/view/cut-amp-tag-data-processing-and-analysis-tutorial-e6nvw93x7gmk/v1?step=14
+
+##Correlatio analysis can also be performed using deeptools
+
+##Generate a correlation matrix
+
+#PBS -lwalltime=72:00:00
+#PBS -lselect=1:ncpus=200:mem=900gb
+
+module load anaconda3/personal
+source activate deeptools_env
+
+cd $PBS_O_WORKDIR
+
+multiBamSummary bins --bamfiles FILE_1.bam FILE_2.bam FILE_3.bam --binSize 5000 --minMappingQuality 30 --numberOfProcessors 30 -o FILE_CorrelationMatrix.npz
+
+#bin size can be adjusted for higher resolution
+
+##Visualizing the correlation matrix
+
+#PBS -lwalltime=72:00:00
+#PBS -lselect=1:ncpus=200:mem=900gb
+
+module load anaconda3/personal
+source activate deeptools_env
+
+cd $PBS_O_WORKDIR
+
+plotCorrelation -in FILE_CorrelationMatrix.npz --corMethod pearson --whatToPlot heatmap --colorMap RdYlBu --plotNumbers --removeOutliers -o FILE_CorrelationMatrix_Visualisation.png
+
+#corMethod can be pearson or spearman; pearson is used for a normally distributed data, whereas spearman is for skewed distributions
