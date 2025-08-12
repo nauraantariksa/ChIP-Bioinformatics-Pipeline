@@ -27,4 +27,4 @@ time sratoolkit.3.1.1-mac-x86_64/bin/fasterq-dump --stdout -X 2 $SRA_CODE
 
 #downloading files from SRA
 
-time sratoolkit.3.1.1-mac-x86_64/bin/fasterq-dump $SRA_CODE
+sratoolkit.3.1.1-mac-x86_64/bin/fasterq-dump SRA_CODE
