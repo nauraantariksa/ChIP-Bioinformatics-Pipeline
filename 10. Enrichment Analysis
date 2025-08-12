@@ -5,7 +5,7 @@
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=250:mem=900gb
 
-module load anaconda3/personal
+eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
 cd $PBS_O_WORKDIR
 
 bamCoverage -b FILE_NAME.bam -o FILE_NAME.bigwig --binSize 10 --normalizeUsing CPM
@@ -15,7 +15,7 @@ bamCoverage -b FILE_NAME.bam -o FILE_NAME.bigwig --binSize 10 --normalizeUsing C
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=250:mem=900gb
 
-module load anaconda3/personal
+eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
 source activate deeptools_env
 
 cd $PBS_O_WORKDIR
@@ -26,15 +26,13 @@ computeMatrix reference-point --referencePoint center -b 10000 -a 10000 -R REFER
 # FILE_NAME.bigwig is the BIGWIG file of your peaks
 
 ## Plot Enrichment Profile in deeptools_env
-module load anaconda3/personal
-source ~/.bahsrc
+eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
 conda activate deeptools_env 
 
 plotProfile -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png --plotTitle
 
 ## Plot Enrichment Heatmap in deeptools_env
-module load anaconda3/personal
-source ~/.bahsrc
+eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
 conda activate deeptools_env 
 
 plotHeatmap -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png
