@@ -8,7 +8,7 @@ echo "FILENAME_1_R1 FILENAME_1_R2 FILENAME_2_R1 FILENAME_2_R2" > FILENAME.txt
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=250:mem=900g
 
-#module load anaconda3/personal
+#module load anaconda3/personal or eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
 
 for name in $(cat $PBS_O_WORKDIR/FILENAME.txt)
 do
