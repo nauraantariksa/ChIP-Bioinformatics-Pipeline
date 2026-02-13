@@ -18,4 +18,7 @@ qdel followed by job id to delete job from queue
 # cd to change course directory 
 # ls to list files in folder 
 # echo to repeat back what you've written 
-# gunzip to unzip a gz file 
+# gunzip to unzip a gz file
+
+# Entering conda env in CX3 Phase 2 server
+eval "$(~/anaconda3/bin/conda shell.bash hook)"
