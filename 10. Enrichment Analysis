@@ -32,7 +32,7 @@ conda activate deeptools_env
 plotProfile -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png --plotTitle
 
 ## Plot Enrichment Heatmap in deeptools_env
-eval "$(/rds/general/user/nfa23/home/anaconda3/bin/conda shell.bash hook)"
-conda activate deeptools_env 
+eval "$(~/anaconda3/bin/conda shell.bash hook)"
+conda activate deeptools_env
 
 plotHeatmap -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png
