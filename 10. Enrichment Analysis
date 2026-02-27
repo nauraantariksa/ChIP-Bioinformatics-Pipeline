@@ -29,7 +29,7 @@ computeMatrix reference-point --referencePoint center -b 2000 -a 2000 -R REFEREN
 eval "$(~/anaconda3/bin/conda shell.bash hook)"
 conda activate deeptools_env 
 
-plotProfile -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png --plotTitle
+plotProfile -m FILE_NAME_matrix.mat.gz -out FILE_NAME_PROFILE.png --plotTitle --outRawCounts
 
 ## Plot Enrichment Heatmap in deeptools_env
 eval "$(~/anaconda3/bin/conda shell.bash hook)"
