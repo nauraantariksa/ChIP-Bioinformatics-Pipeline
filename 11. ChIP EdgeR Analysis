@@ -1,0 +1,18 @@
+#ChIP EdgeR Analysis is adapted from Robert Hansel-Hertsch (2016), utilized for differential analysis of ChIP data
+#Clone the Hansel-Hertsch's github from https://github.com/sblab-bioinformatics/dna-secondary-struct-chrom-lands/tree/master
+
+#Merging peaks with mergePeaks.sh after peak calling with MACS2, creating a union.bed file of all the technical replicates (all technical replicates moved into one folder for easier access)
+
+~/dna-secondary-struct-chrom-lands/utils/mergePeaks.sh *_peaks.narrowPeak | cut -f1-3 > NAME_OF_FILE_Union.bed
+
+#coverageBED
+
+for bam in CS1AN_*.dedup2.bl.dedup.sort.bam
+do   
+coverageBed -sorted -g genome.full.txt -a CS1AN_WTvCSB_Union.main.bed -b "$bam" > "${bam%.bam}.union.bed"
+done
+
+#Creating count table
+echo 'chrom start end nreads nonzero len frac sample_id' | tr ' ' '\t' > union.counts.bed
+~/dna-secondary-struct-chrom-lands/utils/tableCat.py -i CS1AN_*.union.bed -r '.dedup2.bl.dedup.sort.union.bed' >> union.counts.bed
+
