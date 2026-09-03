@@ -1,9 +1,10 @@
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=250:mem=900gb
 
-module load samtools
-module load bedtools
-module load picard
+module load SAMtools/1.18-GCC-12.3.0
+module load BEDTools/2.31.0-GCC-12.3.0
+module load tools/prod
+module load picard/2.25.1-Java-11
 
 sam_dir=/path/to/Alignment
 
