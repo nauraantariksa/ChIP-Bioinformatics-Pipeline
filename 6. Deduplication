@@ -1,17 +1,20 @@
 #PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=200:mem=900gb
 
-module load samtools
-module load bedtools
-module load picard
+module load SAMtools/1.18-GCC-12.3.0
+module load BEDTools/2.31.0-GCC-12.3.0
+module load tools/prod
+module load picard/2.25.1-Java-11
 
-bam_dir='path/to/FilteringSorting'
+bam_dir='/PATH/TO/BAM'
+tmp_dir=$EPHEMERAL/tmp_dedup
+mkdir -p $tmp_dir
 
 for file in $bam_dir/*.bl.dedup.sort.bam
 do
 name=`basename $file .bl.dedup.sort.bam`
-picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$file O=$name.dedup2.bl.dedup.sort.bam M=$name.dedup2.metrics.txt
-samtools index $name.dedup2.bl.dedup.sort.bam
+java -jar $EBROOTPICARD/picard.jar MarkDuplicates REMOVE_DUPLICATES=TRUE I=$file O=$tmp_dir/$name.dedup2.bl.dedup.sort.bam M=$tmp_dir/$name.dedup2.metrics.txt TMP_DIR=$tmp_dir
+samtools index $tmp_dir/$name.dedup2.bl.dedup.sort.bam
 done
 
-cp * $PBS_O_WORKDIR
+cp $tmp_dir/*.dedup2.bl.dedup.sort.bam* $tmp_dir/*.dedup2.metrics.txt "$PBS_O_WORKDIR"/
