@@ -7,9 +7,11 @@ conda activate macs2_env
 
 #code to call peaks using macs2
 
-macs2 callpeak  -t /path/to/CUT&Tag/BAM/File -c /path/to/CUT&Tag/Input/BAM/File -f BAMPE -n FILE_NAME
+macs2 callpeak  -t /path/to/CUT&Tag/BAM/File -c /path/to/CUT&Tag/Input/BAM/File -f BAMPE --keep-dup all -p 0.0001 -n FILE_NAME
 
 # -t is sorted ChIP bam file
 # -c is sorted input bam file 
 # -n is output file prefix
 # -f is indicating paired-end vs non-paired-end sample
+# --keep-dup all ensures that no reads are removed even if they overlap (since we have deduplicated)
+# -p 0.0001 ensures sensitivity
