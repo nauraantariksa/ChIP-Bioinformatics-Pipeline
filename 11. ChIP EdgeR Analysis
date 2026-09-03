@@ -16,3 +16,287 @@ done
 echo 'chrom start end nreads nonzero len frac sample_id' | tr ' ' '\t' > union.counts.bed
 ~/dna-secondary-struct-chrom-lands/utils/tableCat.py -i CS1AN_*.union.bed -r '.dedup2.bl.dedup.sort.union.bed' >> union.counts.bed
 
+#Creating library size .txt file
+for b in CS1AN_*.dedup2.bl.dedup.sort.bam; do
+  echo -e "$(basename $b .dedup2.bl.dedup.sort.bam)\t$(samtools view -c -f 0x2 -F 0x400 $b)"
+done > libsizes.txt
+
+#R program to run with union.counts.bed and libsizes.txt, Adapted from Hansel-Hertsch et al. BG4 ChIP-seq analysis. The R-program below is specifically for CSB+/- project.
+
+library(data.table)
+library(edgeR)
+
+setwd(".")   # directory containing the *.union.bed files
+
+# --- 1. read the tableCat.py long-format table into a count matrix ----------
+
+cnt <- fread("/Users/naura/Downloads/union.counts.bed")
+cnt[, locus := paste(chrom, start, end, sep = "_")]
+
+cntct  <- dcast.data.table(cnt, locus ~ sample_id, value.var = "nreads")
+counts <- as.matrix(cntct[, -1])
+rownames(counts) <- cntct$locus
+
+# dcast sorts columns alphabetically - keep the locus order for later use
+loci <- cntct$locus
+
+message(sprintf("Loaded %d regions x %d libraries", nrow(counts), ncol(counts)))
+print(colnames(counts))
+
+
+# --- 2. separate IP from input ---------------------------------------------
+
+is_input <- grepl("Input", colnames(counts))
+ip  <- counts[, !is_input, drop = FALSE]
+inp <- counts[,  is_input, drop = FALSE]
+
+
+# --- 3. sum technical replicates within each biological replicate -----------
+# Tech1/Tech2 are independent IPs from the same chromatin: they are NOT independent biological observations. Summing keeps integer counts and the negative-binomial mean-variance relationship intact.
+
+bioreps <- c("CS1AN_CSB_BG4_Bio1", "CS1AN_CSB_BG4_Bio3", "CS1AN_CSB_BG4_Bio4",
+             "CS1AN_WT_BG4_Bio1",  "CS1AN_WT_BG4_Bio2",  "CS1AN_WT_BG4_Bio3")
+
+ip_bio <- sapply(bioreps, function(b) {
+  cols <- grepl(b, colnames(ip), fixed = TRUE)
+  stopifnot(sum(cols) > 0)
+  rowSums(ip[, cols, drop = FALSE])
+})
+message("\nTechnical replicates summed. Biological replicates:")
+print(colSums(ip_bio))
+
+
+# --- 4. library sizes = TOTAL mapped reads per BAM --------------------------
+
+libsize_file <- "/Users/naura/Downloads/libsizes.txt"
+if (file.exists(libsize_file)) {
+  ls_tab <- fread(libsize_file, col.names = c("sample", "total"))
+  # sum the technical replicates' library sizes to match the summed counts
+  libSize <- sapply(bioreps, function(b)
+    sum(ls_tab$total[grepl(b, ls_tab$sample, fixed = TRUE)]))
+  stopifnot(all(libSize > 0))
+} else {
+  warning("libsizes.txt not found - falling back to column sums. ",
+          "This will absorb the FRiP difference. Generate the file.")
+  libSize <- colSums(ip_bio)
+}
+print(libSize)
+
+
+# --- 5. edgeR ---------------------------------------------------------------
+
+group <- factor(c(rep("CSBplus", 3), rep("CSBminus", 3)),
+                levels = c("CSBminus", "CSBplus"))   # logFC = CSB+ / CSB-
+design <- model.matrix(~ group)
+
+run_edger <- function(norm_method) {
+  y <- DGEList(counts = ip_bio, group = group)
+  y$samples$lib.size <- libSize
+  
+  keep <- filterByExpr(y, design)
+  message(sprintf("\n[%s] regions retained after filtering: %d of %d",
+                  norm_method, sum(keep), length(keep)))
+  y <- y[keep, , keep.lib.sizes = TRUE]     # TRUE: keep the BAM-derived sizes
+  
+  y <- calcNormFactors(y, method = norm_method)
+  message(sprintf("[%s] normalisation factors:", norm_method))
+  print(round(y$samples$norm.factors, 3))
+  
+  y   <- estimateDisp(y, design)
+  fit <- glmQLFit(y, design)                # QL: better for small n than exactTest
+  res <- glmQLFTest(fit, coef = 2)
+  
+  dt <- data.table(topTags(res, n = Inf)$table, keep.rownames = "locus")
+  message(sprintf("[%s] FDR < 0.05: %d up, %d down",
+                  norm_method, nrow(dt[FDR < 0.05 & logFC > 0]),
+                  nrow(dt[FDR < 0.05 & logFC < 0])))
+  list(y = y, dt = dt)
+}
+
+res_none <- run_edger("none")
+res_tmm  <- run_edger("TMM")
+
+
+# --- 6. diagnostics ---------------------------------------------------------
+
+pdf("bg4_diagnostics.pdf", width = 10, height = 5)
+par(mfrow = c(1, 2), las = 1, bty = "l")
+plotMDS(res_none$y, labels = colnames(ip_bio), main = "MDS (lib.size = total)")
+plotBCV(res_none$y, main = "Biological CV")
+dev.off()
+
+# MA plots, one per normalisation
+pal <- colorRampPalette(c("white", "lightblue", "yellow", "red"), space = "Lab")
+pdf("bg4_maplots.pdf", width = 10, height = 5, pointsize = 10)
+par(mfrow = c(1, 2), las = 1, mgp = c(1.75, 0.5, 0), bty = "l",
+    mar = c(3, 3, 3, 0.5))
+for (nm in c("none", "TMM")) {
+  dt <- if (nm == "none") res_none$dt else res_tmm$dt
+  smoothScatter(dt$logCPM, dt$logFC, colramp = pal, col = "blue",
+                xlab = "logCPM", ylab = "logFC",
+                main = sprintf("BG4 [CSB+ - CSB-], norm = %s", nm))
+  lines(loess.smooth(dt$logCPM, dt$logFC, span = 0.1), lwd = 2, col = "grey60")
+  abline(h = 0, col = "grey30")
+  points(dt$logCPM, dt$logFC,
+         col = ifelse(dt$FDR < 0.05, "#FF000080", "transparent"),
+         cex = 0.5, pch = ".")
+  mtext(side = 3, line = -1.2, adj = 1,
+        text = sprintf("FDR<0.05 up: %s", nrow(dt[FDR < 0.05 & logFC > 0])))
+  mtext(side = 1, line = -1.2, adj = 1,
+        text = sprintf("FDR<0.05 down: %s", nrow(dt[FDR < 0.05 & logFC < 0])))
+  grid(col = "grey50")
+}
+dev.off()
+
+
+# --- 7. concordance between the two normalisations --------------------------
+# The intersection is the robust set. The 'none'-only set is the global
+# component and carries the no-spike-in caveat.
+
+sig_none <- res_none$dt[FDR < 0.05, locus]
+sig_tmm  <- res_tmm$dt[FDR < 0.05, locus]
+message(sprintf("\nSignificant: none = %d, TMM = %d, both = %d",
+                length(sig_none), length(sig_tmm),
+                length(intersect(sig_none, sig_tmm))))
+
+
+# --- 8. write out, with coordinates restored --------------------------------
+
+annotate <- function(dt) {
+  parts <- tstrsplit(dt$locus, "_", fixed = TRUE)
+  dt[, `:=`(chrom = parts[[1]],
+            start = as.integer(parts[[2]]),
+            end   = as.integer(parts[[3]]))]
+  setcolorder(dt, c("chrom", "start", "end"))[]
+}
+
+fwrite(annotate(res_none$dt), "bg4_diff_normNone.txt", sep = "\t")
+fwrite(annotate(res_tmm$dt),  "bg4_diff_normTMM.txt",  sep = "\t")
+
+# BED of the robust set, for downstream motif / T-run analysis
+robust <- res_tmm$dt[locus %in% sig_none & FDR < 0.05]
+fwrite(robust[logFC > 0, .(chrom, start, end)],
+       "diff_CSBplus_up.bed", sep = "\t", col.names = FALSE)
+fwrite(robust[logFC < 0, .(chrom, start, end)],
+       "diff_CSBminus_up.bed", sep = "\t", col.names = FALSE)
+
+
+# --- 9. input check (copy number control) -----------------------------------
+# CS1AN parental and the CSB-reinstated line may differ in copy number.
+# A differential region should NOT show a matching shift in the inputs.
+
+if (ncol(inp) > 0) {
+  inp_cpm <- t(t(inp) / colSums(inp)) * 1e6
+  plus_i  <- rowMeans(inp_cpm[, grepl("_CSB_", colnames(inp_cpm)), drop = FALSE])
+  minus_i <- rowMeans(inp_cpm[, grepl("_WT_",  colnames(inp_cpm)), drop = FALSE])
+  input_lfc <- data.table(locus = loci,
+                          input_logFC = log2((plus_i + 1) / (minus_i + 1)))
+  chk <- merge(res_tmm$dt[, .(locus, logFC, FDR)], input_lfc, by = "locus")
+  message(sprintf(
+    "\nCorrelation of IP logFC with input logFC at significant regions: %.3f",
+    cor(chk[FDR < 0.05, logFC], chk[FDR < 0.05, input_logFC],
+        use = "complete.obs")))
+  message("A strong positive correlation implicates copy-number differences.")
+  fwrite(chk, "input_copynumber_check.txt", sep = "\t")
+}
+
+message("\nDone.")
+
+#File outputs:
+#bg4_diff_normNone.txt is all regions, without normalization
+#bg4_diff_normTMM.txt	is all regions, with TMM normalization
+#diff_CSBplus_up.bed is regions UP in CSBplus without normalization
+#diff_CSBminus_up.bed regions UP in CSBminus without normalization
+#input_copynumber_check.txt is the logFC of input files
+#bg4_diagnostics.pdf is a clustering file using MDS (similar to PCA)
+#bg4_maplots.pdf is a logFC vs logCPM graph for each normalization
+
+#Checking "stable copy number" in input, namely regions where the input is unchanged between CSB+/CSB-
+
+library(data.table)
+chk <- fread("/Users/naura/Downloads/input_copynumber_check.txt")
+sig <- chk[FDR < 0.05]
+nrow(sig)
+nrow(sig[abs(input_logFC) < 0.5])
+
+#Downstream analyses were performed only in regions where the input is "stable", i.e. logFC of input > 0.05
+
+# Extract input-matched significant BG4 regions.
+#
+# Starting point: bg4_diff_normTMM.txt (differential test) and
+# input_copynumber_check.txt (input logFC per region).
+#
+# A region is kept if:
+#   FDR < 0.05                  edgeR called it differential
+#   |input_logFC| < 0.5         input is comparable between the two cell
+#                               lines, so the IP difference cannot be
+#                               explained by DNA abundance / copy number
+#
+# NAMING: "CSB" files are CSB+ (reinstated); "WT" files are CSB- (parental,
+# CSB-deficient). Positive logFC = higher in CSB+.
+# ---------------------------------------------------------------------------
+
+library(data.table)
+
+FDR_CUT   <- 0.05
+INPUT_CUT <- 0.5
+
+diff <- fread("/Users/naura/Downloads/bg4_diff_normTMM.txt")
+chk  <- fread("/Users/naura/Downloads/input_copynumber_check.txt")
+
+# input_logFC is the only column needed from the check file
+d <- merge(diff, chk[, .(locus, input_logFC)], by = "locus")
+
+message(sprintf("regions tested:            %d", nrow(d)))
+message(sprintf("significant (FDR < %.2f):   %d", FDR_CUT, sum(d$FDR < FDR_CUT)))
+
+keep <- d[FDR < FDR_CUT & abs(input_logFC) < INPUT_CUT]
+message(sprintf("input-matched significant: %d", nrow(keep)))
+
+up   <- keep[logFC > 0][order(-logFC)]   # higher in CSB+
+down <- keep[logFC < 0][order(logFC)]    # higher in CSB-
+message(sprintf("  higher in CSB+: %d", nrow(up)))
+message(sprintf("  higher in CSB-: %d", nrow(down)))
+
+# --- BED for downstream tools (HOMER, bedtools, MEME) ----------------------
+# 6 columns: chrom, start, end, name, score, strand.
+# score is |logFC| scaled to BED's 0-1000 range; strand is "." since BG4
+# peaks are unstranded.
+
+to_bed <- function(dt) {
+  dt[, .(chrom, start, end,
+         name  = locus,
+         score = pmin(round(abs(logFC) * 200), 1000),
+         strand = ".")][order(chrom, start)]
+}
+
+fwrite(to_bed(up),   "BG4_CSBplus_up_inputmatched.bed",
+       sep = "\t", col.names = FALSE)
+fwrite(to_bed(down), "BG4_CSBminus_up_inputmatched.bed",
+       sep = "\t", col.names = FALSE)
+fwrite(to_bed(keep), "BG4_diff_all_inputmatched.bed",
+       sep = "\t", col.names = FALSE)
+
+# --- background set for motif analysis -------------------------------------
+# Regions tested but NOT differential, with matched input. These are real
+# BG4 peaks that did not change, so using them as HOMER background asks
+# "what distinguishes the CSB-dependent G4s from G4s in general" rather
+# than the trivial "are these G4s G-rich".
+
+bg <- d[FDR >= 0.5 & abs(input_logFC) < INPUT_CUT]
+message(sprintf("non-differential background: %d", nrow(bg)))
+fwrite(to_bed(bg), "BG4_nondiff_background.bed", sep = "\t", col.names = FALSE)
+
+# --- full tables with all statistics, for the record -----------------------
+
+fwrite(up,   "BG4_CSBplus_up_inputmatched.txt",  sep = "\t")
+fwrite(down, "BG4_CSBminus_up_inputmatched.txt", sep = "\t")
+
+message("\nWritten:")
+message("  BG4_CSBplus_up_inputmatched.bed   (higher in CSB+)")
+message("  BG4_CSBminus_up_inputmatched.bed  (higher in CSB-)")
+message("  BG4_diff_all_inputmatched.bed     (both directions)")
+message("  BG4_nondiff_background.bed        (background for motif analysis)")
+message("  ... plus .txt versions with logFC/FDR retained")
+
+
