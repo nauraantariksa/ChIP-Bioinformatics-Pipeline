@@ -6,19 +6,21 @@ module load BEDTools/2.31.0-GCC-12.3.0
 module load tools/prod
 module load picard/2.25.1-Java-11
 
-sam_dir=/path/to/Alignment
+sam_dir=/PATH/TO/SAM/FILES
+tmp_dir=$EPHEMERAL/tmp_filtering
+mkdir -p $tmp_dir
 
 for file in $sam_dir/*.sam
 do
-name=`basename $file .sam` 
-samtools view -F 2308 -b -q 10 $sam_dir/$name.sam > $name.bam
-samtools sort -o $name.sort.bam -O 'bam' -T temp_$name $name.bam
-picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$name.sort.bam O=$name.dedup.sort.bam M=$name.metrics.txt
-bedtools intersect -v -abam $name.dedup.sort.bam -b '/rds/general/project/diantonio/live/tools/blacklisted_regions/hg38-blacklist.v2.bed' > $name.bl.dedup.sort.bam
-samtools index $name.bl.dedup.sort.bam
-rm $name.bam $name.sort.bam $name.dedup.sort.bam
+name=`basename $file .sam`
+samtools view -F 2308 -b -q 10 $sam_dir/$name.sam > $tmp_dir/$name.bam
+samtools sort -o $tmp_dir/$name.sort.bam -O 'bam' -T $tmp_dir/temp_$name $tmp_dir/$name.bam
+java -jar $EBROOTPICARD/picard.jar MarkDuplicates REMOVE_DUPLICATES=TRUE I=$tmp_dir/$name.sort.bam O=$tmp_dir/$name.dedup.sort.bam M=$tmp_dir/$name.metrics.txt TMP_DIR=$tmp_dir
+bedtools intersect -v -abam $tmp_dir/$name.dedup.sort.bam -b '/rds/general/project/diantonio/live/tools/blacklisted_regions/hg38-blacklist.v2.bed' > $tmp_dir/$name.bl.dedup.sort.bam
+samtools index $tmp_dir/$name.bl.dedup.sort.bam
+rm $tmp_dir/$name.bam $tmp_dir/$name.sort.bam $tmp_dir/$name.dedup.sort.bam
 done
 
-cp * $PBS_O_WORKDIR
+cp $tmp_dir/*.bl.dedup.sort.bam* $tmp_dir/*.metrics.txt "$PBS_O_WORKDIR"
 
 #Often times, deduplication does not work properly, and so the sample needs to be "deduplicated" (see 6.)
