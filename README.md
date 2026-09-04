@@ -1,4 +1,4 @@
-#ChIP Bioinformatics Pipeline
+# ChIP Bioinformatics Pipeline
 
 This GitHub page is a collection of scripts and general code used for the analysis of ChIP datasets
 
